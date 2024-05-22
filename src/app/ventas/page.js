@@ -1,18 +1,34 @@
 'use client'
 import { useState, useEffect } from 'react';
 
-// read all products from the api
 async function LoadProducts() {
   const res = await fetch('http://localhost:3000/api/products');
   const data = await res.json();
   return data;
 }
 
+async function updateProductStock(code, newStock) {
+  const res = await fetch(`http://localhost:3000/api/products/${code}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ stock: newStock }),
+  });
+
+  if (!res.ok) {
+    throw new Error('Failed to update product stock');
+  }
+
+  return res.json();
+}
+
+
 export default function Caja() {
   const [cajaAbierta, setCajaAbierta] = useState(false);
   const [tiempoApertura, setTiempoApertura] = useState(null);
   const [ventas, setVentas] = useState([]);
-  const [productos, setProductos] = useState([{ codigo: '', description: '', cantidad: 0, precio: 0 }]);
+  const [productos, setProductos] = useState([{ codigo: '', descripcion: '', cantidad: 0, precio: 0 }]);
   const [total, setTotal] = useState(0);
   const [listaProductos, setListaProductos] = useState([]);
 
@@ -43,18 +59,46 @@ export default function Caja() {
   };
 
   const agregarProducto = () => {
-    setProductos([...productos, { codigo: '', description: '', cantidad: 0, precio: 0 }]);
+    setProductos([...productos, { codigo: '', descripcion: '', cantidad: 0, precio: 0 }]);
   };
 
-  const registrarVenta = () => {
+// Actualización de la función registrarVenta
+  const registrarVenta = async () => {
     if (cajaAbierta) {
-      const nuevasVentas = productos.map(producto => ({ ...producto, tiempo: new Date() }));
-      setVentas([...ventas, ...nuevasVentas]);
-      setProductos([{ codigo: '', description: '', cantidad: 0, precio: 0 }]);
+      try {
+        const nuevasVentas = productos.map(producto => ({ ...producto, tiempo: new Date() }));
+        setVentas([...ventas, ...nuevasVentas]);
+
+        // Actualizar stock de cada producto
+        for (let producto of productos) {
+          const productoEncontrado = listaProductos.find(prod => prod.code === producto.codigo);
+          
+          if (productoEncontrado) {
+            // Parsear valores como enteros
+            const stockActual = parseInt(productoEncontrado.quantity);
+            const cantidadVendida = parseInt(producto.cantidad);
+            
+            // Verificar si los valores son enteros válidos
+            if (!isNaN(stockActual) && !isNaN(cantidadVendida)) {
+              const nuevoStock = stockActual - cantidadVendida;
+              await updateProductStock(producto.codigo, nuevoStock);
+            } else {
+              console.error(`Stock o cantidad no válidos para ${productoEncontrado.code}`);
+            }
+          }
+        }
+
+        // Restablecer valores del formulario después de registrar la venta
+        setProductos([{ codigo: '', descripcion: '', cantidad: 0, precio: 0 }]);
+      } catch (error) {
+        console.error('Error al registrar la venta:', error);
+      }
     } else {
       console.log('La caja está cerrada. No se puede registrar la venta.');
     }
   };
+
+
 
   const calcularTotal = () => {
     let nuevoTotal = productos.reduce((total, producto) => total + (producto.cantidad || 0) * (producto.precio || 0), 0);
@@ -67,10 +111,10 @@ export default function Caja() {
 
     const productoEncontrado = listaProductos.find(prod => prod.code === value);
     if (productoEncontrado) {
-      newProductos[index].description = productoEncontrado.description;
+      newProductos[index].descripcion = productoEncontrado.description;
       newProductos[index].precio = productoEncontrado.price;
     } else {
-      newProductos[index].description = '';
+      newProductos[index].descripcion = '';
       newProductos[index].precio = 0;
     }
 
@@ -104,8 +148,8 @@ export default function Caja() {
                 }} className="w-full border rounded px-3 py-2" />
               </div>
               <div className="flex-grow">
-                <label htmlFor={`description-${index}`} className="block mb-1">Descripción:</label>
-                <input type="text" id={`description-${index}`} value={producto.description} readOnly className="w-full border rounded px-3 py-2 bg-gray-200" />
+                <label htmlFor={`descripcion-${index}`} className="block mb-1">Descripción:</label>
+                <input type="text" id={`descripcion-${index}`} value={producto.descripcion} readOnly className="w-full border rounded px-3 py-2 bg-gray-200" />
               </div>
               <div className="flex-grow">
                 <label htmlFor={`cantidad-${index}`} className="block mb-1">Cantidad:</label>
@@ -135,7 +179,7 @@ export default function Caja() {
         <ul className="list-disc pl-4 mt-2">
           {ventas.map((venta, index) => (
             <li key={index} className="mb-2">
-              {venta.description} - Cantidad: {venta.cantidad} - Precio: ${venta.precio.toFixed(2)} - Fecha y Hora: {venta.tiempo.toLocaleString()}
+              {venta.descripcion} - Cantidad: {venta.cantidad} - Precio: ${venta.precio.toFixed(2)} - Fecha y Hora: {venta.tiempo.toLocaleString()}
             </li>
           ))}
         </ul>
@@ -143,6 +187,7 @@ export default function Caja() {
     </div>
   );
 }
+
 
 
 
