@@ -109,6 +109,10 @@ export default function Caja() {
 
   const cerrarCaja = () => {
     setCajaAbierta(false);
+    setTiempoApertura(null); // Reiniciar el tiempo de apertura
+    setVentas([]); // Reiniciar las ventas
+    setProductos([{ codigo: '', descripcion: '', cantidad: 0, precio: 0 }]); // Reiniciar los productos
+
     if (typeof window !== 'undefined') {
       localStorage.removeItem('cajaAbierta');
       localStorage.removeItem('tiempoApertura');
