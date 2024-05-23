@@ -4,6 +4,7 @@ import { List, AutoSizer } from 'react-virtualized';
 import { debounce } from 'lodash';
 import CreateProduct from '@/components/CreateProduct';
 import EditProduct from '@/components/EditProduct';
+import Navbar from '@/components/Navbar';
 
 // read all products from the api
 async function LoadProducts() {
@@ -69,9 +70,10 @@ export default function Dashboard() {
     };
 
     return (
-        <div className="flex">
-            <div className="flex-1 overflow-y-auto">
-                <div className="container mx-auto py-6">
+        <div className="flex h-screen">
+            <Navbar/>
+            <div className="flex flex-col flex-1 overflow-y-auto">
+                <div className="flex-1 ml-60 container mx-auto py-6">
                     <h1 className="text-3xl font-semibold mb-6">Productos</h1>
                     <div className="flex justify-between mb-4">
                         <input
@@ -125,15 +127,3 @@ export default function Dashboard() {
         </div>
     );
 }
-
-
-
-
-
-
-
-
-
-
-
-
